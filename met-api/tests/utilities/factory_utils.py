@@ -15,8 +15,10 @@
 
 Test Utility for creating model factory.
 """
+from typing import Optional
 from faker import Faker
 from flask import current_app, g
+from met_api.auth import Auth
 
 from met_api.config import get_named_config
 from met_api.constants.engagement_status import Status
@@ -25,28 +27,40 @@ from met_api.models import Tenant
 from met_api.models.comment import Comment as CommentModel
 from met_api.models.email_verification import EmailVerification as EmailVerificationModel
 from met_api.models.engagement import Engagement as EngagementModel
+from met_api.models.engagement_metadata import EngagementMetadata, MetadataTaxon
 from met_api.models.engagement_settings import EngagementSettingsModel
 from met_api.models.engagement_slug import EngagementSlug as EngagementSlugModel
 from met_api.models.feedback import Feedback as FeedbackModel
 from met_api.models.membership import Membership as MembershipModel
 from met_api.models.participant import Participant as ParticipantModel
+from met_api.models.poll_answers import PollAnswer as PollAnswerModel
+from met_api.models.poll_responses import PollResponse as PollResponseModel
 from met_api.models.report_setting import ReportSetting as ReportSettingModel
 from met_api.models.staff_user import StaffUser as StaffUserModel
 from met_api.models.submission import Submission as SubmissionModel
 from met_api.models.subscription import Subscription as SubscriptionModel
 from met_api.models.survey import Survey as SurveyModel
+from met_api.models.timeline_event import TimelineEvent as TimelineEventModel
 from met_api.models.widget import Widget as WidgetModal
 from met_api.models.widget_documents import WidgetDocuments as WidgetDocumentModel
 from met_api.models.widget_item import WidgetItem as WidgetItemModal
+from met_api.models.widget_map import WidgetMap as WidgetMapModel
+from met_api.models.widget_poll import Poll as WidgetPollModel
+from met_api.models.widget_timeline import WidgetTimeline as WidgetTimelineModel
+from met_api.models.widget_video import WidgetVideo as WidgetVideoModel
 from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import MembershipStatus
 from tests.utilities.factory_scenarios import (
-    TestCommentInfo, TestEngagementInfo, TestEngagementSlugInfo, TestFeedbackInfo, TestParticipantInfo,
-    TestReportSettingInfo, TestSubmissionInfo, TestSurveyInfo, TestTenantInfo, TestUserInfo, TestWidgetDocumentInfo,
-    TestWidgetInfo, TestWidgetItemInfo)
+    TestCommentInfo, TestEngagementInfo, TestEngagementMetadataInfo, TestEngagementMetadataTaxonInfo,
+    TestEngagementSlugInfo, TestFeedbackInfo, TestJwtClaims, TestParticipantInfo, TestPollAnswerInfo,
+    TestPollResponseInfo, TestReportSettingInfo, TestSubmissionInfo, TestSurveyInfo, TestTenantInfo, TestTimelineInfo,
+    TestUserInfo, TestWidgetDocumentInfo, TestWidgetInfo, TestWidgetItemInfo, TestWidgetMap, TestWidgetPollInfo,
+    TestWidgetVideo)
+
+
+fake = Faker()
 
 CONFIG = get_named_config('testing')
-fake = Faker()
 
 JWT_HEADER = {
     'alg': CONFIG.JWT_OIDC_TEST_ALGORITHMS,
@@ -135,6 +149,8 @@ def factory_engagement_model(eng_info: dict = TestEngagementInfo.engagement1, na
         end_date=eng_info.get('end_date'),
         is_internal=eng_info.get('is_internal')
     )
+    if tenant_id := eng_info.get('tenant_id'):
+        engagement.tenant_id = tenant_id
     engagement.save()
     return engagement
 
@@ -152,18 +168,74 @@ def factory_tenant_model(tenant_info: dict = TestTenantInfo.tenant1):
     return tenant
 
 
+def factory_engagement_metadata_model(
+        metadata_info: dict = TestEngagementMetadataInfo.metadata0):
+    """Produce a test-ready engagement metadata model."""
+    metadata = EngagementMetadata(
+        engagement_id=metadata_info.get('engagement_id'),
+        taxon_id=metadata_info.get('taxon_id'),
+        value=metadata_info.get('value', fake.text()),
+    )
+    metadata.save()
+    return metadata
+
+
+def factory_metadata_requirements(auth: Optional[Auth] = None):
+    """Create a tenant, an associated staff user, and engagement, for tests."""
+    tenant = factory_tenant_model()
+    tenant.short_name = fake.lexify(text='????').upper()
+    (engagement_info := TestEngagementInfo.engagement1.copy())['tenant_id'] = tenant.id
+    engagement = factory_engagement_model(engagement_info)
+    (staff_info := TestUserInfo.user_staff_1.copy())['tenant_id'] = tenant.id
+    factory_staff_user_model(TestJwtClaims.staff_admin_role['sub'], staff_info)
+    taxon = factory_metadata_taxon_model(tenant.id)
+    if auth:
+        headers = factory_auth_header(auth, claims=TestJwtClaims.staff_admin_role, tenant_id=tenant.short_name)
+        return taxon, engagement, tenant, headers
+    return taxon, engagement, tenant, None
+
+
+def factory_taxon_requirements(auth: Optional[Auth] = None):
+    """Create a tenant and staff user, and headers for auth."""
+    tenant = factory_tenant_model()
+    tenant.short_name = fake.lexify(text='????').upper()
+    (staff_info := TestUserInfo.user_staff_1.copy())['tenant_id'] = tenant.id
+    factory_staff_user_model(TestJwtClaims.staff_admin_role.get('sub'), staff_info)
+    if auth:
+        headers = factory_auth_header(auth, claims=TestJwtClaims.staff_admin_role, tenant_id=tenant.short_name)
+        return tenant, headers
+    return tenant, None
+
+
+def factory_metadata_taxon_model(tenant_id: int = 1,
+                                 taxon_info: dict = TestEngagementMetadataTaxonInfo.taxon1):
+    """Produce a test-ready metadata taxon model."""
+    taxon = MetadataTaxon(
+        tenant_id=tenant_id,
+        name=taxon_info.get('name'),
+        description=taxon_info.get('description'),
+        freeform=taxon_info.get('freeform'),
+        data_type=taxon_info.get('data_type'),
+        default_value=taxon_info.get('default_value'),
+        one_per_engagement=taxon_info.get('one_per_engagement'),
+        position=taxon_info.get('position'),
+    )
+    taxon.save()
+    return taxon
+
+
 def factory_staff_user_model(external_id=None, user_info: dict = TestUserInfo.user_staff_1):
     """Produce a staff user model."""
     # Generate a external id if not passed
-    external_id = fake.random_number(
-        digits=5) if external_id is None else external_id
+    external_id = external_id or fake.uuid4()
     user = StaffUserModel(
+        external_id=str(external_id),
         first_name=user_info['first_name'],
         last_name=user_info['last_name'],
         middle_name=user_info['middle_name'],
         email_address=user_info['email_address'],
-        external_id=str(external_id),
         status_id=user_info['status_id'],
+        tenant_id=user_info['tenant_id'],
     )
     user.save()
     return user
@@ -206,11 +278,12 @@ def factory_feedback_model(feedback_info: dict = TestFeedbackInfo.feedback1, sta
     return feedback
 
 
-def factory_auth_header(jwt, claims):
+def factory_auth_header(jwt, claims, tenant_id=None):
     """Produce JWT tokens for use in tests."""
     return {
         'Authorization': 'Bearer ' + jwt.create_jwt(claims=claims, header=JWT_HEADER),
-        TENANT_ID_HEADER: current_app.config.get('DEFAULT_TENANT_SHORT_NAME'),
+        TENANT_ID_HEADER: (tenant_id or
+                           current_app.config.get('DEFAULT_TENANT_SHORT_NAME')),
     }
 
 
@@ -299,6 +372,9 @@ def patch_token_info(claims, monkeypatch):
     monkeypatch.setattr(
         'met_api.utils.user_context._get_token_info', token_info)
 
+    # Add a database user that matches the token
+    # factory_staff_user_model(external_id=claims.get('sub'))
+
 
 def factory_engagement_slug_model(eng_slug_info: dict = TestEngagementSlugInfo.slug1):
     """Produce a engagement model."""
@@ -333,3 +409,90 @@ def factory_engagement_setting_model(engagement_id):
     )
     setting.save()
     return setting
+
+
+def factory_poll_model(widget, poll_info: dict = TestWidgetPollInfo.poll1):
+    """Produce a Poll  model."""
+    poll = WidgetPollModel(
+        title=poll_info.get('title'),
+        description=poll_info.get('description'),
+        status=poll_info.get('status'),
+        engagement_id=widget.engagement_id,
+        widget_id=widget.id
+    )
+    poll.save()
+    return poll
+
+
+def factory_poll_answer_model(poll, answer_info: dict = TestPollAnswerInfo.answer1):
+    """Produce a Poll  model."""
+    answer = PollAnswerModel(
+        answer_text=answer_info.get('answer_text'),
+        poll_id=poll.id
+    )
+    answer.save()
+    return answer
+
+
+def factory_poll_response_model(poll, answer, response_info: dict = TestPollResponseInfo.response1):
+    """Produce a Poll  model."""
+    response = PollResponseModel(
+        participant_id=response_info.get('participant_id'),
+        selected_answer_id=answer.id,
+        poll_id=poll.id,
+        widget_id=poll.widget_id
+    )
+    response.save()
+    return response
+
+
+def factory_video_model(video_info: dict = TestWidgetVideo.video1):
+    """Produce a comment model."""
+    video = WidgetVideoModel(
+        video_url=video_info.get('video_url'),
+        description=video_info.get('description'),
+        widget_id=video_info.get('widget_id'),
+        engagement_id=video_info.get('engagement_id'),
+    )
+    video.save()
+    return video
+
+
+def factory_widget_timeline_model(widget_timeline: dict = TestTimelineInfo.widget_timeline):
+    """Produce a widget timeline model."""
+    widget_timeline = WidgetTimelineModel(
+        widget_id=widget_timeline.get('widget_id'),
+        engagement_id=widget_timeline.get('engagement_id'),
+        title=widget_timeline.get('title'),
+        description=widget_timeline.get('description'),
+    )
+    widget_timeline.save()
+    return widget_timeline
+
+
+def factory_timeline_event_model(timeline_event: dict = TestTimelineInfo.timeline_event):
+    """Produce a widget timeline model."""
+    timeline_event = TimelineEventModel(
+        widget_id=timeline_event.get('widget_id'),
+        engagement_id=timeline_event.get('engagement_id'),
+        timeline_id=timeline_event.get('timeline_id'),
+        status=timeline_event.get('status'),
+        position=timeline_event.get('position'),
+        description=timeline_event.get('description'),
+        time=timeline_event.get('time'),
+    )
+    timeline_event.save()
+    return timeline_event
+
+
+def factory_widget_map_model(widget_map: dict = TestWidgetMap.map1):
+    """Produce a widget map model."""
+    widget_map = WidgetMapModel(
+        widget_id=widget_map.get('widget_id'),
+        engagement_id=widget_map.get('engagement_id'),
+        longitude=widget_map.get('longitude'),
+        latitude=widget_map.get('latitude'),
+        marker_label=widget_map.get('marker_label'),
+    )
+    widget_map.save()
+    return widget_map

@@ -1,5 +1,51 @@
+## January 29, 2024
+- **Task** Updated Babel Traverse library. [🎟️DESENG-474](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-474)
+  - Run `npm audit fix` to update the vulnerable Babel traverse library.
+
+## January 26, 2024
+- **Task** Poll Widget: Front-end. [🎟️DESENG-464](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-464)
+  - Created UI for Poll Widget.
+  - Updated Poll widget API and unit tests.
+
+## January 25, 2024
+- **Task** Resolve issue preventing met-web from deploying on the Dev OpenShift environment. [🎟️DESENG-469](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-469)
+  - Remove Epic Engage-related links and update Keycloak link.
+  - Remove additional authentication method.
+
+## January 24, 2024
+- **Task** Update default project type to GDX for all deployments by default. [🎟️DESENG-472](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-472)
+  - Set the default project type to GDX on all continuous deployment (CD) files.
+  - Removed the option to deploy to EAO.
+
+## January 22, 2024
+- **Task** Poll Widget: Back-end [🎟️DESENG-463](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-463)
+  - Created Database models for Widget Poll, Poll Answers, Poll Response.
+  - Created API to manage  Widget Poll, Poll Answers, Poll Response.
+  - Created Unit tests to test the code.
+- **Task** Add missing unit tests for met api [🎟️DESENG-481](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-481)
+  - Added missing unit tests for met api
+  - Added unit tests for error handling for met api
+
+## January 19, 2024
+
+- **Feature**: Add metadata management to the API [🎟️DESENG-442](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-442)
+  - Add new models, services, and endpoints for metadata and metadata taxonomy
+  - Add test coverage for new endpoints
+  - Begin documenting new endpoints using Flask-RESTX
+  - Add new endpoints to the API blueprint
+  - Enabled pylint for flask and flask_sqlalchemy in vscode
+  - Created a new "transactional" decorator to wrap model methods in a transaction that safely rolls back on error
+  - Stub out frontend components for metadata management in preparation for the next step
+- **Task**: Continue switching staff users to db-based (rather than keycloak based) authentication
+
 ## January 15, 2024
 
+- **Task** Audit for missing unit tests [🎟️DESENG-436](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-436)
+  - Corrected tests to execute smoothly in the local environment using development variables.
+  - Established continuous integration configuration to automatically run tests upon each commit.
+  - Ensured that the tests pass successfully in our GitHub test environment.
+- **Task** Audit for missing unit tests [🎟️DESENG-449](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-449)
+  - Identified and corrected failing unit test for api and web
 - **Bug Fix**: Fixing Form.io error when reordering Radio Button options [🎟️DESENG-446](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-446)
 
 ## January 10, 2024
@@ -24,7 +70,7 @@
 
 ## December 28, 2023
 
-> **Feature**: Added the timeline widget. [🎟️DESENG-439](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-439)
+- **Feature**: Added the timeline widget. [🎟️DESENG-439](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-439)
 
 ## December 11, 2023
 

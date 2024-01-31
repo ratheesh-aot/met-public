@@ -1,11 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { postEngagement, getEngagement, patchEngagement } from '../../../services/engagementService';
-import {
-    postEngagementMetadata,
-    getEngagementMetadata,
-    patchEngagementMetadata,
-} from '../../../services/engagementMetadataService';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { getEngagementMetadata } from '../../../services/engagementMetadataService';
+import { useNavigate, useParams } from 'react-router-dom';
 import { EngagementContext, EngagementForm, EngagementFormUpdate, EngagementParams } from './types';
 import {
     createDefaultEngagement,
@@ -17,13 +13,14 @@ import { saveObject } from 'services/objectStorageService';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch, useAppSelector } from 'hooks';
 import { getErrorMessage } from 'utils';
-import { updatedDiff, diff } from 'deep-object-diff';
+import { updatedDiff } from 'deep-object-diff';
 import { PatchEngagementRequest } from 'services/engagementService/types';
 import { USER_ROLES } from 'services/userService/constants';
 import { EngagementStatus } from 'constants/engagementStatus';
 
 const CREATE = 'create';
 export const ActionContext = createContext<EngagementContext>({
+    // TODO: Reimplement handle*MetadataRequest methods using the new engagement metadata API
     handleCreateEngagementRequest: (_engagement: EngagementForm): Promise<Engagement> => {
         return Promise.reject();
     },
@@ -55,8 +52,6 @@ export const ActionContext = createContext<EngagementContext>({
 
 export const ActionProvider = ({ children }: { children: JSX.Element }) => {
     const { engagementId } = useParams<EngagementParams>();
-    const { search } = useLocation();
-    const searchParams = new URLSearchParams(search);
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
@@ -162,27 +157,6 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
         verifyUserCanEdit();
     }, [savedEngagement, engagementId]);
 
-    const handleCreateEngagementMetadataRequest = async (
-        engagement: EngagementMetadata,
-    ): Promise<EngagementMetadata> => {
-        setSaving(true);
-        try {
-            const result = await postEngagementMetadata(engagement);
-            setSaving(false);
-            return Promise.resolve(result);
-        } catch (error) {
-            dispatch(
-                openNotification({
-                    severity: 'error',
-                    text: getErrorMessage(error) || 'Error Creating Engagement Metadata',
-                }),
-            );
-            setSaving(false);
-            console.log(error);
-            return Promise.reject(error);
-        }
-    };
-
     const handleCreateEngagementRequest = async (engagement: EngagementForm): Promise<Engagement> => {
         setSaving(true);
         try {
@@ -252,36 +226,13 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
         }
     };
 
+    // TODO: replace these stubs with new handlers
+    const handleCreateEngagementMetadataRequest = async (): Promise<EngagementMetadata> => {
+        return Promise.reject();
+    };
+
     const handleUpdateEngagementMetadataRequest = async (): Promise<EngagementMetadata> => {
-        try {
-            if (!savedEngagement.id) {
-                dispatch(
-                    openNotification({ severity: 'error', text: 'Please save the engagement before adding metadata' }),
-                );
-                return engagementMetadata;
-            }
-            const state = { ...engagementMetadata };
-            const engagementMetadataToUpdate: EngagementMetadata = {
-                engagement_id: Number(engagementId),
-            };
-            const metadataDiff = diff(state, engagementMetadataToUpdate) as EngagementMetadata;
-
-            if (Object.keys(metadataDiff).length === 0) {
-                return engagementMetadata;
-            }
-
-            const updatedEngagementMetadata = await patchEngagementMetadata({
-                ...metadataDiff,
-                engagement_id: Number(engagementId),
-            });
-            setEngagementMetadata(updatedEngagementMetadata);
-            return Promise.resolve(updatedEngagementMetadata);
-        } catch (error) {
-            dispatch(openNotification({ severity: 'error', text: 'Error saving engagement metadata' }));
-            setSaving(false);
-            console.log(error);
-            return Promise.reject(error);
-        }
+        return Promise.reject();
     };
 
     return (
