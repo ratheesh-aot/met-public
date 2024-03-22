@@ -1,8 +1,9 @@
 import { createTheme } from '@mui/material';
+import { bcdsSurfacePrimaryDefault } from '@bcgov/design-tokens/js-prefixed/variables.js';
 
 export const Palette = {
     primary: {
-        main: '#003366',
+        main: bcdsSurfacePrimaryDefault,
         light: '#385989',
         dark: '#000C3B',
     },
