@@ -163,6 +163,12 @@ class Config:  # pylint: disable=too-few-public-methods
     # CORS settings
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '').split(',')
 
+    # CORS_MAX_AGE defines the maximum age (in seconds) for Cross-Origin Resource Sharing (CORS) settings.
+    # This value is used to indicate how long the results of a preflight request (OPTIONS) can be cached
+    # by the client, reducing the frequency of preflight requests for the specified HTTP methods.
+    # Adjust this value based on security considerations.
+    CORS_MAX_AGE = os.getenv('CORS_MAX_AGE', None)  # Default: 0 seconds
+
     EPIC_CONFIG = {
         'ENABLED': env_truthy('EPIC_INTEGRATION_ENABLED'),
         'JWT_OIDC_ISSUER': os.getenv('EPIC_JWT_OIDC_ISSUER'),
@@ -179,8 +185,12 @@ class Config:  # pylint: disable=too-few-public-methods
         'REALMNAME': os.getenv('KEYCLOAK_REALMNAME', 'standard'),
         'SERVICE_ACCOUNT_ID': os.getenv('MET_ADMIN_CLIENT_ID'),
         'SERVICE_ACCOUNT_SECRET': os.getenv('MET_ADMIN_CLIENT_SECRET'),
-        'ADMIN_USERNAME': os.getenv('MET_ADMIN_CLIENT_ID'),
-        'ADMIN_SECRET': os.getenv('MET_ADMIN_CLIENT_SECRET'),
+        'ADMIN_BASE_URL': os.getenv('KEYCLOAK_ADMIN_TOKEN_URL', ''),
+        'ADMIN_USERNAME': os.getenv('KEYCLOAK_ADMIN_CLIENT_ID'),
+        'ADMIN_SECRET': os.getenv('KEYCLOAK_ADMIN_CLIENT_SECRET'),
+        'CSS_API_URL': os.getenv('CSS_API_URL', ''),
+        'CSS_API_ENVIRONMENT': os.getenv('CSS_API_ENVIRONMENT', ''),
+        'CSS_API_INTEGRATION_ID': os.getenv('CSS_API_INTEGRATION_ID'),
         'CONNECT_TIMEOUT': int(os.getenv('KEYCLOAK_CONNECT_TIMEOUT', '60')),
     }
 
@@ -289,7 +299,7 @@ class Config:  # pylint: disable=too-few-public-methods
         'CLOSEOUT': {
             'ID': os.getenv('CLOSEOUT_EMAIL_TEMPLATE_ID'),
             'SUBJECT': os.getenv('CLOSEOUT_EMAIL_SUBJECT',
-                                 'MET - Engagement Closed'),
+                                 'The public commenting period for {engagement_name} is now closed.'),
         },
         'ACCESS_REQUEST': {
             'ID': os.getenv('ACCESS_REQUEST_EMAIL_TEMPLATE_ID'),

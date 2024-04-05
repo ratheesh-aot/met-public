@@ -1,14 +1,9 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo } from 'react';
 import { postEngagement, getEngagement, patchEngagement } from '../../../services/engagementService';
-import { getEngagementMetadata } from '../../../services/engagementMetadataService';
+import { getEngagementMetadata, getMetadataTaxa } from '../../../services/engagementMetadataService';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EngagementContext, EngagementForm, EngagementFormUpdate, EngagementParams } from './types';
-import {
-    createDefaultEngagement,
-    createDefaultEngagementMetadata,
-    Engagement,
-    EngagementMetadata,
-} from '../../../models/engagement';
+import { createDefaultEngagement, Engagement, EngagementMetadata, MetadataTaxon } from '../../../models/engagement';
 import { saveObject } from 'services/objectStorageService';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch, useAppSelector } from 'hooks';
@@ -17,25 +12,31 @@ import { updatedDiff } from 'deep-object-diff';
 import { PatchEngagementRequest } from 'services/engagementService/types';
 import { USER_ROLES } from 'services/userService/constants';
 import { EngagementStatus } from 'constants/engagementStatus';
+import { EngagementContent, createDefaultEngagementContent } from 'models/engagementContent';
+import { getEngagementContent } from 'services/engagementContentService';
 
 const CREATE = 'create';
 export const ActionContext = createContext<EngagementContext>({
-    // TODO: Reimplement handle*MetadataRequest methods using the new engagement metadata API
     handleCreateEngagementRequest: (_engagement: EngagementForm): Promise<Engagement> => {
         return Promise.reject();
     },
     handleUpdateEngagementRequest: (_engagement: EngagementFormUpdate): Promise<Engagement> => {
         return Promise.reject();
     },
-    handleCreateEngagementMetadataRequest: (_engagement: EngagementMetadata): Promise<EngagementMetadata> => {
+    tenantTaxa: [],
+    setTenantTaxa: () => {
+        throw new Error('setTenantTaxa is unimplemented');
+    },
+    setEngagementMetadata() {
         return Promise.reject();
     },
-    handleUpdateEngagementMetadataRequest: (_engagement: EngagementMetadata): Promise<EngagementMetadata> => {
-        return Promise.reject();
-    },
+    taxonMetadata: new Map(),
     isSaving: false,
+    setSaving: () => {
+        /* empty default method  */
+    },
     savedEngagement: createDefaultEngagement(),
-    engagementMetadata: createDefaultEngagementMetadata(),
+    engagementMetadata: [],
     engagementId: CREATE,
     loadingSavedEngagement: true,
     handleAddBannerImage: (_files: File[]) => {
@@ -48,6 +49,17 @@ export const ActionContext = createContext<EngagementContext>({
         /* empty default method  */
     },
     loadingAuthorization: true,
+    isNewEngagement: true,
+    setIsNewEngagement: () => {
+        /* empty default method  */
+    },
+    contentTabs: [createDefaultEngagementContent()],
+    setContentTabs: () => {
+        return;
+    },
+    fetchEngagementContents: async () => {
+        /* empty default method  */
+    },
 });
 
 export const ActionProvider = ({ children }: { children: JSX.Element }) => {
@@ -61,12 +73,13 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
     const [loadingSavedEngagement, setLoadingSavedEngagement] = useState(true);
     const [loadingAuthorization, setLoadingAuthorization] = useState(true);
 
+    const [tenantTaxa, setTenantTaxa] = useState<MetadataTaxon[]>([]);
     const [savedEngagement, setSavedEngagement] = useState<Engagement>(createDefaultEngagement());
-    const [engagementMetadata, setEngagementMetadata] = useState<EngagementMetadata>({
-        ...createDefaultEngagementMetadata(),
-    });
+    const [isNewEngagement, setIsNewEngagement] = useState(!savedEngagement.id);
+    const [engagementMetadata, setEngagementMetadata] = useState<EngagementMetadata[]>([]);
     const [bannerImage, setBannerImage] = useState<File | null>();
     const [savedBannerImageFileName, setSavedBannerImageFileName] = useState('');
+    const [contentTabs, setContentTabs] = useState<EngagementContent[]>([createDefaultEngagementContent()]);
     const isCreate = window.location.pathname.includes(CREATE);
 
     const handleAddBannerImage = (files: File[]) => {
@@ -102,17 +115,54 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
         if (isCreate) {
             return;
         }
-
         try {
             const engagementMetaData = await getEngagementMetadata(Number(engagementId));
             setEngagementMetadata(engagementMetaData);
+            const taxaData = await getMetadataTaxa();
+            engagementMetadata.forEach((metadata) => {
+                const taxon = taxaData[metadata.taxon_id];
+                if (taxon) {
+                    if (taxon.entries === undefined) {
+                        taxon.entries = [];
+                    }
+                    taxon.entries.push(metadata);
+                }
+            });
+            setTenantTaxa(Object.values(taxaData));
         } catch (err) {
             console.log(err);
             dispatch(openNotification({ severity: 'error', text: 'Error Fetching Engagement Metadata' }));
         }
     };
+
+    const taxonMetadata = useMemo(() => {
+        const taxonMetadataMap = new Map<number, string[]>();
+        engagementMetadata.forEach((metadata) => {
+            if (!taxonMetadataMap.has(metadata.taxon_id)) {
+                taxonMetadataMap.set(metadata.taxon_id, []);
+            }
+            taxonMetadataMap.get(metadata.taxon_id)?.push(metadata.value);
+        });
+        return taxonMetadataMap;
+    }, [engagementMetadata]);
+
+    const fetchEngagementContents = async () => {
+        if (isCreate) {
+            return;
+        }
+
+        try {
+            const engagementContents = await getEngagementContent(Number(engagementId));
+            setContentTabs(engagementContents);
+        } catch (err) {
+            console.log(err);
+            dispatch(openNotification({ severity: 'error', text: 'Error Fetching Engagement Contents' }));
+        }
+    };
+
     const setEngagement = (engagement: Engagement) => {
         setSavedEngagement({ ...engagement });
+        setIsNewEngagement(!savedEngagement.id);
         setSavedBannerImageFileName(engagement.banner_filename);
 
         if (bannerImage) setBannerImage(null);
@@ -146,6 +196,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
     const loadData = async () => {
         await fetchEngagement();
         await fetchEngagementMetadata();
+        await fetchEngagementContents();
         setLoadingSavedEngagement(false);
     };
 
@@ -166,6 +217,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
                 banner_filename: uploadedBannerImageFileName,
             });
 
+            setEngagement(result);
             dispatch(openNotification({ severity: 'success', text: 'Engagement has been created' }));
             setSaving(false);
             return Promise.resolve(result);
@@ -209,7 +261,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
 
             const updatedEngagement = await patchEngagement({
                 ...engagementEditsToPatch,
-                id: Number(engagementId),
+                id: Number(savedEngagement.id),
                 status_block: engagement.status_block?.filter((_, index) => {
                     return engagementEditsToPatch.status_block?.[index];
                 }),
@@ -226,23 +278,15 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
         }
     };
 
-    // TODO: replace these stubs with new handlers
-    const handleCreateEngagementMetadataRequest = async (): Promise<EngagementMetadata> => {
-        return Promise.reject();
-    };
-
-    const handleUpdateEngagementMetadataRequest = async (): Promise<EngagementMetadata> => {
-        return Promise.reject();
-    };
-
     return (
         <ActionContext.Provider
             value={{
                 handleCreateEngagementRequest,
                 handleUpdateEngagementRequest,
-                handleCreateEngagementMetadataRequest,
-                handleUpdateEngagementMetadataRequest,
+                tenantTaxa,
+                setTenantTaxa,
                 isSaving,
+                setSaving,
                 savedEngagement,
                 engagementMetadata,
                 engagementId,
@@ -250,7 +294,14 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
                 handleAddBannerImage,
                 fetchEngagement,
                 fetchEngagementMetadata,
+                setEngagementMetadata,
+                taxonMetadata,
                 loadingAuthorization,
+                isNewEngagement,
+                setIsNewEngagement,
+                contentTabs,
+                setContentTabs,
+                fetchEngagementContents,
             }}
         >
             {children}

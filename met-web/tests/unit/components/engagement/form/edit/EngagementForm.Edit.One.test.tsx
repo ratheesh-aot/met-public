@@ -91,7 +91,7 @@ describe('Engagement form page tests', () => {
     const useParamsMock = jest.spyOn(reactRouter, 'useParams');
     const getEngagementMetadataMock = jest
         .spyOn(engagementMetadataService, 'getEngagementMetadata')
-        .mockReturnValue(Promise.resolve(engagementMetadata));
+        .mockReturnValue(Promise.resolve([engagementMetadata]));
     jest.spyOn(engagementSettingService, 'getEngagementSettings').mockReturnValue(Promise.resolve(engagementSetting));
     jest.spyOn(teamMemberService, 'getTeamMembers').mockReturnValue(Promise.resolve([]));
     jest.spyOn(engagementMetadataService, 'patchEngagementMetadata').mockReturnValue(
@@ -127,18 +127,20 @@ describe('Engagement form page tests', () => {
 
     test('Engagement form with saved engagement should display saved info', async () => {
         useParamsMock.mockReturnValue({ engagementId: '1' });
-        render(<EngagementForm />);
+        const { getByTestId, getByText, getByDisplayValue } = render(<EngagementForm />);
 
         await waitFor(() => {
             expect(screen.getByDisplayValue('Test Engagement')).toBeInTheDocument();
         });
 
-        expect(getEngagementMock).toHaveBeenCalledOnce();
-        expect(getEngagementMetadataMock).toHaveBeenCalledOnce();
-        expect(screen.getByTestId('update-engagement-button')).toBeVisible();
-        expect(screen.getByDisplayValue('2022-09-01')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('2022-09-30')).toBeInTheDocument();
-        expect(screen.getByText('Survey 1')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(getEngagementMock).toHaveBeenCalledOnce();
+            expect(getEngagementMetadataMock).toHaveBeenCalledOnce();
+            expect(getByTestId('save-engagement-button')).toBeVisible();
+            expect(getByDisplayValue('2022-09-01')).toBeInTheDocument();
+            expect(getByDisplayValue('2022-09-30')).toBeInTheDocument();
+            expect(getByText('Survey 1')).toBeInTheDocument();
+        });
     });
 
     test('Save engagement button should trigger patch call', async () => {
@@ -148,7 +150,7 @@ describe('Engagement form page tests', () => {
         await waitFor(() => {
             expect(screen.getByDisplayValue('Test Engagement')).toBeInTheDocument();
         });
-        const updateButton = screen.getByTestId('update-engagement-button');
+        const updateButton = screen.getByTestId('save-engagement-button');
 
         const nameInput = container.querySelector('input[name="name"]');
         assert(nameInput, 'Unable to find engagement name input');
@@ -157,20 +159,23 @@ describe('Engagement form page tests', () => {
 
         await waitFor(() => {
             expect(patchEngagementMock).toHaveBeenCalledOnce();
-            expect(screen.getByText('Save')).toBeInTheDocument();
+            expect(screen.getByText('Save and Continue')).toBeInTheDocument();
         });
     });
 
     test('Modal with warning appears when removing survey', async () => {
         useParamsMock.mockReturnValue({ engagementId: '1' });
-        render(<EngagementForm />);
+        const { getByTestId, getByDisplayValue } = render(<EngagementForm />);
 
         await waitFor(() => {
-            expect(screen.getByDisplayValue('Test Engagement')).toBeInTheDocument();
+            expect(getByDisplayValue('Test Engagement')).toBeInTheDocument();
         });
 
-        const removeSurveyButton = screen.getByTestId(`survey-widget/remove-${survey.id}`);
+        await waitFor(() => {
+            expect(getByTestId(`survey-widget/remove-${survey.id}`));
+        });
 
+        const removeSurveyButton = getByTestId(`survey-widget/remove-${survey.id}`);
         fireEvent.click(removeSurveyButton);
 
         expect(openNotificationModalMock).toHaveBeenCalledOnce();
@@ -184,18 +189,16 @@ describe('Engagement form page tests', () => {
                 surveys: surveys,
             }),
         );
-        getEngagementMetadataMock.mockReturnValueOnce(
-            Promise.resolve({
-                ...engagementMetadata,
-            }),
-        );
-        render(<EngagementForm />);
+        const { getByText, getByDisplayValue } = render(<EngagementForm />);
 
         await waitFor(() => {
-            expect(screen.getByDisplayValue('Test Engagement')).toBeInTheDocument();
+            expect(getByDisplayValue('Test Engagement')).toBeInTheDocument();
         });
+        getEngagementMetadataMock.mockReturnValueOnce(Promise.resolve([engagementMetadata]));
 
-        expect(screen.getByText('Add Survey')).toBeDisabled();
+        await waitFor(() => {
+            expect(getByText('Add Survey')).toBeDisabled();
+        });
     });
 
     test('Can move to settings tab', async () => {

@@ -24,11 +24,12 @@ from faker import Faker
 from met_api.config import get_named_config
 from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.engagement_status import Status as EngagementStatus
+from met_api.constants.engagement_content_type import EngagementContentType
 from met_api.constants.engagement_status import SubmissionStatus
 from met_api.constants.timeline_event_status import TimelineEventStatus
 from met_api.constants.feedback import CommentType, FeedbackSourceType, FeedbackStatusType, RatingType
 from met_api.constants.widget import WidgetType
-from met_api.utils.enums import LoginSource, UserStatus
+from met_api.utils.enums import ContentTitle, LoginSource, UserStatus
 
 
 fake = Faker()
@@ -244,9 +245,6 @@ class TestEngagementInfo(dict, Enum):
         'description': 'My Test Engagement Description',
         'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
-        'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
-            \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
     }
 
 
@@ -286,44 +284,65 @@ class TestEngagementMetadataTaxonInfo(dict, Enum):
     taxon1 = {
         'name': fake.name(),
         'description': fake.text(max_nb_chars=256),
-        'data_type': 'string',
+        'data_type': 'text',
         'freeform': True,
         'one_per_engagement': False,
-        'default_value': None,
-        'position': 1
     }
 
     taxon2 = {
         'name': fake.name(),
         'description': fake.text(max_nb_chars=256),
-        'tenant_id': 1,
-        'data_type': 'url',
+        'data_type': 'long_text',
         'freeform': True,
         'one_per_engagement': False,
-        'default_value': None,
-        'position': 2
     }
 
     taxon3 = {
         'name': fake.name(),
         'description': fake.text(max_nb_chars=256),
-        'tenant_id': 1,
-        'data_type': 'string',
+        'data_type': 'text',
         'freeform': False,
         'one_per_engagement': True,
-        'default_value': None,
-        'position': 3
     }
 
-    taxon4 = {
+    filterable_taxon1 = {
         'name': fake.name(),
         'description': fake.text(max_nb_chars=256),
-        'tenant_id': 1,
-        'data_type': 'string',
+        'data_type': 'text',
+        'freeform': True,
+        'one_per_engagement': False,
+        'filter_type': 'chips_all',
+        'include_freeform': True
+    }
+
+    filterable_taxon2 = {
+        'name': fake.name(),
+        'description': fake.text(max_nb_chars=256),
+        'data_type': 'text',
         'freeform': False,
         'one_per_engagement': False,
-        'default_value': fake.name(),
-        'position': 4
+        'filter_type': 'chips_all',
+        'include_freeform': False
+    }
+
+    filterable_taxon3 = {
+        'name': fake.name(),
+        'description': fake.text(max_nb_chars=256),
+        'data_type': 'text',
+        'freeform': False,
+        'one_per_engagement': False,
+        'filter_type': 'chips_any',
+        'include_freeform': False
+    }
+
+    filterable_taxon4 = {
+        'name': fake.name(),
+        'description': fake.text(max_nb_chars=256),
+        'data_type': 'text',
+        'freeform': True,
+        'one_per_engagement': False,
+        'filter_type': 'chips_any',
+        'include_freeform': True
     }
 
 
@@ -619,7 +638,7 @@ class TestCommentInfo(dict, Enum):
 
     comment1 = {
         'text': fake.paragraph(nb_sentences=3),
-        'component_id': 'simpletextarea',
+        'component_id': 'simpletext',
         'submission_date': datetime.now().strftime('%Y-%m-%d'),
     }
 
@@ -886,4 +905,110 @@ class TestPollResponseInfo(dict, Enum):
         'selected_answer_id': 2,  # should be replaced with an actual answer ID in tests
         'poll_id': 1,            # should be replaced with an actual poll ID in tests
         'widget_id': 1,          # should be replaced with an actual widget ID in tests
+    }
+
+
+class TestEngagementContentInfo(dict, Enum):
+    """Test scenarios of engagement content."""
+
+    content1 = {
+        'title': ContentTitle.DEFAULT.value,
+        'icon_name': ContentTitle.DEFAULT_ICON.value,
+        'content_type': EngagementContentType.Summary.name,
+        'is_internal': False,
+    }
+    content2 = {
+        'title': 'Custom',
+        'icon_name': ContentTitle.DEFAULT_ICON.value,
+        'content_type': EngagementContentType.Custom.name,
+        'is_internal': False,
+    }
+
+
+class TestLanguageInfo(dict, Enum):
+    """Test scenarios of language."""
+
+    language1 = {
+        'name': 'Spanish',
+        'code': 'en',
+        'right_to_left': False,
+    }
+
+
+class TestWidgetTranslationInfo(dict, Enum):
+    """Test scenarios of widget translation content."""
+
+    widgettranslation1 = {
+        'title': fake.text(max_nb_chars=20),
+        'map_marker_label': fake.text(max_nb_chars=20),
+    }
+
+
+class TestSurveyTranslationInfo(dict, Enum):
+    """Test scenarios of Survey Translation."""
+
+    survey_translation1 = {
+        'survey_id': 1,
+        'language_id': 2,
+        'name': 'Survey Name',
+        'form_json': '{"question": "What is your name?"}'
+    }
+
+
+class TestPollAnswerTranslationInfo(dict, Enum):
+    """Test scenarios of Poll Answer Translation."""
+
+    translation1 = {
+        'poll_answer_id': 1,
+        'language_id': 2,
+        'answer_text': 'Answer 1'
+    }
+
+
+class TestSubscribeItemTranslationInfo(dict, Enum):
+    """Test scenarios of Subscribe Item Translation."""
+
+    translate_info1 = {
+        'subscribe_item_id': 1,
+        'language_id': 2,
+        'description': fake.text(),
+    }
+
+
+class TestEventItemTranslationInfo(dict, Enum):
+    """Test scenarios of Event Item Translation."""
+
+    event_item_info1 = {
+        'event_item_id': 1,
+        'language_id': 2,
+        'description': fake.text(),
+        'location_name': 'Location name',
+        'location_address': 'location address',
+        'url': fake.url(),
+        'url_label': fake.name(),
+    }
+
+
+class TestTimelineEventTranslationInfo(dict, Enum):
+    """Test scenarios of TimeLine Event Translation."""
+
+    timeline_event_info1 = {
+        'timeline_event_id': 1,
+        'language_id': 2,
+        'description': fake.text(),
+        'time': datetime.now().strftime('%Y-%m-%d'),
+    }
+
+
+class TestEngagementTranslationInfo(dict, Enum):
+    """Test scenarios of engagement translation content."""
+
+    engagementtranslation1 = {
+        'name': fake.text(max_nb_chars=20),
+        'description': fake.text(max_nb_chars=20),
+        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
+            \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
+        'content': 'Content Sample',
+        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
+            \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
     }

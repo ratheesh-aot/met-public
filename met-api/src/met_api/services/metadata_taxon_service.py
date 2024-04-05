@@ -1,12 +1,12 @@
 """Service for engagement management."""
 
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from met_api.models import db
 from met_api.models.db import transactional
-from met_api.models.engagement_metadata import MetadataTaxon
+from met_api.models.engagement_metadata import MetadataTaxon, MetadataTaxonFilterType
 from met_api.models.tenant import Tenant
-from met_api.schemas.engagement_metadata import MetadataTaxonSchema
+from met_api.schemas.engagement_metadata import MetadataTaxonFilterSchema, MetadataTaxonSchema
 
 
 class MetadataTaxonService:
@@ -29,23 +29,54 @@ class MetadataTaxonService:
         return MetadataTaxonSchema(many=True).dump(sorted_results)
 
     @staticmethod
+    def get_filter_options(tenant_id: int) -> dict:
+        """Get all filterable taxa for a tenant."""
+        tenant = Tenant.query.get(tenant_id)
+        results = sorted(tenant.metadata_taxa,
+                         key=lambda taxon: taxon.position) if tenant else []
+        filters = []
+        available_filters = [e.value for e in MetadataTaxonFilterType]
+        for taxon in results:
+            if taxon.filter_type in available_filters:
+                values = []
+                if taxon.freeform and taxon.include_freeform:
+                    # Include values specified on engagements as usable options
+                    # (unique values only)
+                    values = list({entry.value for entry in taxon.entries})
+                else:
+                    # Just use the preset values
+                    values = taxon.preset_values
+                # Don't return the filter if the user has no options; this prevents
+                # the frontend from displaying a useless filter
+                if values:
+                    filters.append({
+                        'taxon_id': taxon.id,
+                        'name': taxon.name,
+                        'filter_type': taxon.filter_type,
+                        'values': values
+                    })
+        return MetadataTaxonFilterSchema(many=True).dump(filters)
+
+    @staticmethod
     def create(tenant_id: int, taxon_data: dict) -> dict:
         """Create a new taxon."""
         taxon_data['tenant_id'] = tenant_id
         taxon: MetadataTaxon = MetadataTaxonSchema().load(taxon_data, session=db.session)
-        taxon.position = MetadataTaxon.query.filter_by(tenant_id=tenant_id).count() + 1
+        taxon.position = MetadataTaxon.query.filter_by(
+            tenant_id=tenant_id).count() + 1
         taxon.save()
         return dict(MetadataTaxonSchema().dump(taxon))
 
     @staticmethod
-    def update(taxon_id: int, taxon_data: dict) -> Union[dict, list]:
+    @transactional()
+    def update(taxon_id: int, taxon_data: dict) -> dict:
         """Update a taxon."""
         taxon = MetadataTaxon.query.get(taxon_id)
         if not taxon:
             raise KeyError(f'Taxon with id {taxon_id} does not exist.')
         schema = MetadataTaxonSchema()
-        taxon = schema.load(taxon_data, session=db.session, instance=taxon)
-        taxon.save()
+        taxon = schema.load(taxon_data, session=db.session,
+                            instance=taxon, partial=True)
         return schema.dump(taxon)
 
     @staticmethod
@@ -85,7 +116,8 @@ class MetadataTaxonService:
         """
         tenant = Tenant.query.get(tenant_id)
         schema = MetadataTaxonSchema()
-        taxon_ordered = sorted(tenant.metadata_taxa, key=lambda taxon: taxon.position)
+        taxon_ordered = sorted(tenant.metadata_taxa,
+                               key=lambda taxon: taxon.position)
         for index, taxon in enumerate(taxon_ordered):
             taxon.position = index + 1
         return schema.dump(taxon_ordered, many=True)
@@ -97,4 +129,6 @@ class MetadataTaxonService:
         taxon: MetadataTaxon = MetadataTaxon.query.get(taxon_id)
         if not taxon:
             raise KeyError(f'Taxon with id {taxon_id} does not exist.')
+        for entry in taxon.entries:
+            entry.delete()
         taxon.delete()

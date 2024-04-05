@@ -6,12 +6,13 @@ Test-Suite to ensure that the /engagements/{engagement_id}/memberships endpoint 
 import json
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from met_api.constants.membership_type import MembershipType
 from met_api.exceptions.business_exception import BusinessException
 from met_api.services.membership_service import MembershipService
-from met_api.utils.enums import ContentType, KeycloakGroupName, MembershipStatus
+from met_api.utils.enums import ContentType, KeycloakCompositeRoleNames, MembershipStatus
 from tests.utilities.factory_utils import (
     factory_auth_header, factory_engagement_model, factory_membership_model, factory_staff_user_model)
 
@@ -27,15 +28,15 @@ def test_create_engagement_membership_team_member(mocker, client, jwt, session,
     staff_user = factory_staff_user_model()
     headers = factory_auth_header(jwt=jwt, claims=claims)
 
-    mock_add_user_to_group_keycloak_response = MagicMock()
-    mock_add_user_to_group_keycloak_response.status_code = HTTPStatus.NO_CONTENT
-    mock_add_user_to_group_keycloak = mocker.patch(
-        'met_api.services.keycloak.KeycloakService.add_user_to_group',
-        return_value=mock_add_user_to_group_keycloak_response
+    mock_add_user_to_role_keycloak_response = MagicMock()
+    mock_add_user_to_role_keycloak_response.status_code = HTTPStatus.NO_CONTENT
+    mock_add_user_to_role_keycloak = mocker.patch(
+        'met_api.services.keycloak.KeycloakService.assign_composite_role_to_user',
+        return_value=mock_add_user_to_role_keycloak_response
     )
-    mock_get_users_groups_keycloak = mocker.patch(
-        'met_api.services.keycloak.KeycloakService.get_users_groups',
-        return_value={staff_user.external_id: [KeycloakGroupName.EAO_TEAM_MEMBER.value]}
+    mock_get_users_roles_keycloak = mocker.patch(
+        'met_api.services.keycloak.KeycloakService.get_users_roles',
+        return_value={staff_user.external_id: [KeycloakCompositeRoleNames.TEAM_MEMBER.value]}
     )
 
     data = {'user_id': staff_user.external_id}
@@ -51,8 +52,8 @@ def test_create_engagement_membership_team_member(mocker, client, jwt, session,
     assert rv.json.get('user_id') == staff_user.id
     assert rv.json.get('type') == MembershipType.TEAM_MEMBER
     assert rv.json.get('status') == MembershipStatus.ACTIVE.value
-    mock_add_user_to_group_keycloak.assert_called()
-    mock_get_users_groups_keycloak.assert_called()
+    mock_add_user_to_role_keycloak.assert_called()
+    mock_get_users_roles_keycloak.assert_called()
 
     with patch.object(MembershipService, 'create_membership',
                       side_effect=BusinessException('Test error', status_code=HTTPStatus.INTERNAL_SERVER_ERROR)):
@@ -73,15 +74,15 @@ def test_create_engagement_membership_reviewer(mocker, client, jwt, session,
     staff_user = factory_staff_user_model()
     headers = factory_auth_header(jwt=jwt, claims=claims)
 
-    mock_add_user_to_group_keycloak_response = MagicMock()
-    mock_add_user_to_group_keycloak_response.status_code = HTTPStatus.NO_CONTENT
+    mock_add_user_to_role_keycloak_response = MagicMock()
+    mock_add_user_to_role_keycloak_response.status_code = HTTPStatus.NO_CONTENT
     mock_add_user_to_group_keycloak = mocker.patch(
-        'met_api.services.keycloak.KeycloakService.add_user_to_group',
-        return_value=mock_add_user_to_group_keycloak_response
+        'met_api.services.keycloak.KeycloakService.assign_composite_role_to_user',
+        return_value=mock_add_user_to_role_keycloak_response
     )
-    mock_get_users_groups_keycloak = mocker.patch(
-        'met_api.services.keycloak.KeycloakService.get_users_groups',
-        return_value={staff_user.external_id: [KeycloakGroupName.EAO_REVIEWER.value]}
+    mock_get_users_roles_keycloak = mocker.patch(
+        'met_api.services.keycloak.KeycloakService.get_users_roles',
+        return_value={staff_user.external_id: [KeycloakCompositeRoleNames.REVIEWER.value]}
     )
 
     data = {'user_id': staff_user.external_id}
@@ -98,7 +99,7 @@ def test_create_engagement_membership_reviewer(mocker, client, jwt, session,
     assert rv.json.get('type') == MembershipType.REVIEWER
     assert rv.json.get('status') == MembershipStatus.ACTIVE.value
     mock_add_user_to_group_keycloak.assert_called()
-    mock_get_users_groups_keycloak.assert_called()
+    mock_get_users_roles_keycloak.assert_called()
 
 
 def test_create_engagement_membership_unauthorized(client, jwt, session,
@@ -276,15 +277,15 @@ def test_get_all_engagements_by_user(mocker, client, jwt, session, side_effect, 
     staff_user = factory_staff_user_model()
     headers = factory_auth_header(jwt=jwt, claims=claims)
 
-    mock_add_user_to_group_keycloak_response = MagicMock()
-    mock_add_user_to_group_keycloak_response.status_code = HTTPStatus.NO_CONTENT
+    mock_add_user_to_role_keycloak_response = MagicMock()
+    mock_add_user_to_role_keycloak_response.status_code = HTTPStatus.NO_CONTENT
     mocker.patch(
-        'met_api.services.keycloak.KeycloakService.add_user_to_group',
-        return_value=mock_add_user_to_group_keycloak_response
+        'met_api.services.keycloak.KeycloakService.assign_composite_role_to_user',
+        return_value=mock_add_user_to_role_keycloak_response
     )
     mocker.patch(
-        'met_api.services.keycloak.KeycloakService.get_users_groups',
-        return_value={staff_user.external_id: [KeycloakGroupName.EAO_TEAM_MEMBER.value]}
+        'met_api.services.keycloak.KeycloakService.get_users_roles',
+        return_value={staff_user.external_id: [KeycloakCompositeRoleNames.TEAM_MEMBER.value]}
     )
 
     data = {'user_id': staff_user.external_id}
