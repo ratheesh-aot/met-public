@@ -58,7 +58,7 @@ install: clean ## Install python virtrual environment
 	pip install -Ur requirements.txt
 
 install-dev: ## Install local application
-	. venv/bin/activate ; \
+	. venv/Scripts/activate ; \
 	pip install -Ur requirements/dev.txt; \
 	pip install -e .
 
@@ -68,18 +68,18 @@ install-dev: ## Install local application
 ci: lint flake8 test ## CI flow
 
 pylint: ## Linting with pylint
-	. venv/bin/activate && pylint --rcfile=setup.cfg  src/$(PROJECT_NAME)
+	. venv/Scripts/activate && pylint --rcfile=setup.cfg  src/$(PROJECT_NAME)
 
 flake8: ## Linting with flake8
-	. venv/bin/activate && flake8 src/$(PROJECT_NAME) tests
+	. venv/Scripts/activate && flake8 src/$(PROJECT_NAME) tests
 
 lintfix: ## Linting fix
-	. venv/bin/activate && autopep8 -i -a src/**/*.py tests/**/*.py
+	. venv/Scripts/activate && autopep8 -i -a src/**/*.py tests/**/*.py
 
 lint: pylint flake8 ## run all lint type scripts
 
 test: ## Unit testing
-	. venv/bin/activate && pytest
+	. venv/Scripts/activate && pytest
 
 mac-cov: local-test ## Run the coverage report and display in a browser window (mac)
 	open -a "Google Chrome" htmlcov/index.html
@@ -139,16 +139,16 @@ tag: push ## tag image
 # COMMANDS - Local                                                              #
 #################################################################################
 run: db ## Run the project in local
-	. venv/bin/activate && python -m flask run -p 5000
+	. venv/Scripts/activate && python -m flask run -p 5000
 
 db: ## Update the local database
-	. venv/bin/activate && python manage.py db upgrade
+	. venv/Scripts/activate && python manage.py db upgrade
 
 db-downgrade: ## Update the local database to the previous migration
-	. venv/bin/activate && python manage.py db downgrade
+	. venv/Scripts/activate && python manage.py db downgrade
 
 db-migrate: ## Create a new migration
-	. venv/bin/activate && flask db migrate -m "$(message)"
+	. venv/Scripts/activate && flask db migrate -m "$(message)"
 
 #################################################################################
 # Self Documenting Commands                                                     #
