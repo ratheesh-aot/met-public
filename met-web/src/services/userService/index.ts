@@ -1,4 +1,3 @@
-import { _kc } from 'constants/tenantConstants';
 import {
     userToken,
     userDetails,
@@ -14,21 +13,23 @@ import Endpoints from 'apiManager/endpoints';
 import http from 'apiManager/httpRequestHandler';
 import { User } from 'models/user';
 import { getMembershipsByUser } from 'services/membershipService';
-import { USER_ROLES } from 'services/userService/constants';
+import { USER_ROLES, USER_STATUS } from 'services/userService/constants';
 import { getBaseUrl } from 'helper';
 
-const KeycloakData = _kc;
+let KeycloakData: Keycloak.default;
+
 /**
- * Initializes Keycloak instance.
+ * Setting Keycloak instance.
  */
-const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
+const setKeycloakInstance = (instance: Keycloak.default) => {
+    KeycloakData = instance;
+};
+/**
+ * Setting user authentication data in storage
+ */
+const setAuthData = async (dispatch: Dispatch<AnyAction>) => {
     try {
-        const authenticated = await KeycloakData.init({
-            onLoad: 'check-sso',
-            silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-            pkceMethod: 'S256',
-            checkLoginIframe: false,
-        });
+        const authenticated = !!KeycloakData.token;
         if (!authenticated) {
             console.warn('not authenticated!');
             dispatch(userAuthentication(authenticated));
@@ -50,7 +51,7 @@ const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
 
         const userDetail: UserDetail = await KeycloakData.loadUserInfo();
         const updateUserResponse = await updateUser();
-        if (updateUserResponse.data) {
+        if (updateUserResponse.data && updateUserResponse.data.status_id == USER_STATUS.ACTIVE) {
             userDetail.user = updateUserResponse.data;
             const engagementsIds = await getAssignedEngagements(userDetail.sub || '', userDetail.user?.roles || []);
             dispatch(userDetails(userDetail));
@@ -151,7 +152,7 @@ const getAssignedEngagements = async (externalId: string, roles: string[]) => {
 };
 
 const UserService = {
-    initKeycloak,
+    setAuthData,
     updateUser,
     doLogin,
     doLogout,
@@ -159,6 +160,7 @@ const UserService = {
     getToken,
     hasRole,
     hasAdminRole,
+    setKeycloakInstance,
 };
 
 export default UserService;

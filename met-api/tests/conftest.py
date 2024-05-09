@@ -19,12 +19,14 @@ import copy
 import pytest
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
+import sqlalchemy.orm
 
 from met_api import create_app, setup_jwt_manager
 from met_api.auth import jwt as _jwt
 from met_api.models import db as _db
-from tests.utilities.factory_utils import factory_staff_user_model
+from tests.utilities.factory_utils import factory_staff_user_model, factory_user_group_membership_model
 from tests.utilities.factory_scenarios import TestJwtClaims, TestUserInfo
+from met_api.utils.enums import CompositeRoleId
 
 
 @pytest.fixture(scope='session')
@@ -107,8 +109,8 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         conn = db.engine.connect()
         txn = conn.begin()
 
-        options = dict(bind=conn, binds={})
-        sess = db.create_scoped_session(options=options)
+        session_factory = sqlalchemy.orm.sessionmaker(bind=conn)
+        sess = sqlalchemy.orm.scoped_session(session_factory)
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
@@ -174,12 +176,25 @@ def auth_mock(monkeypatch):
     pass
 
 
+@pytest.fixture
+def setup_super_admin_user_and_claims(jwt):
+    """Set up a user with the super-admin role."""
+    staff_info = dict(TestUserInfo.user_staff_1)
+    user = factory_staff_user_model(user_info=staff_info)
+    factory_user_group_membership_model(str(user.external_id), user.tenant_id)
+    claims = copy.deepcopy(TestJwtClaims.met_admin_role.value)
+    claims['sub'] = str(user.external_id)
+
+    return user, claims
+
+
 # Fixture for setting up user and claims for an admin user
 @pytest.fixture
 def setup_admin_user_and_claims(jwt):
     """Set up a user with the staff admin role."""
     staff_info = dict(TestUserInfo.user_staff_1)
     user = factory_staff_user_model(user_info=staff_info)
+    factory_user_group_membership_model(str(user.external_id), user.tenant_id)
     claims = copy.deepcopy(TestJwtClaims.staff_admin_role.value)
     claims['sub'] = str(user.external_id)
 
@@ -192,6 +207,7 @@ def setup_reviewer_and_claims(jwt):
     """Set up a user with the reviewer role."""
     staff_info = dict(TestUserInfo.user_staff_1)
     user = factory_staff_user_model(user_info=staff_info)
+    factory_user_group_membership_model(str(user.external_id), user.tenant_id, CompositeRoleId.REVIEWER.value)
     claims = copy.deepcopy(TestJwtClaims.reviewer_role.value)
     claims['sub'] = str(user.external_id)
 
@@ -204,6 +220,7 @@ def setup_team_member_and_claims(jwt):
     """Set up a user with the team member role."""
     staff_info = dict(TestUserInfo.user_staff_1)
     user = factory_staff_user_model(user_info=staff_info)
+    factory_user_group_membership_model(str(user.external_id), user.tenant_id, CompositeRoleId.TEAM_MEMBER.value)
     claims = copy.deepcopy(TestJwtClaims.team_member_role.value)
     claims['sub'] = str(user.external_id)
 

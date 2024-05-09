@@ -15,7 +15,7 @@
 
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
@@ -32,12 +32,13 @@ from met_api.utils.tenant_validator import require_role
 from met_api.utils.token_info import TokenInfo
 from met_api.utils.util import allowedorigins, cors_preflight
 
+
 API = Namespace('user', description='Endpoints for User Management')
 """Custom exception messages
 """
 
 
-@cors_preflight('PUT')
+@cors_preflight('GET, PUT')
 @API.route('/')
 class StaffUsers(Resource):
     """User controller class."""
@@ -50,16 +51,16 @@ class StaffUsers(Resource):
         try:
             user_data = TokenInfo.get_user_data()
             user = StaffUserService().create_or_update_user(user_data)
-            user.roles = user_data.get('roles')
+            user.roles = current_app.config['JWT_ROLE_CALLBACK'](g.jwt_oidc_token_info)
             return StaffUserSchema().dump(user), HTTPStatus.OK
         except KeyError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err), HTTPStatus.BAD_REQUEST
         except ValueError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err), HTTPStatus.BAD_REQUEST
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @require_role([Role.VIEW_USERS.value], skip_tenant_check_for_admin=True)
+    @require_role([Role.VIEW_USERS.value])
     def get():
         """Return a set of users(staff only)."""
         args = request.args
@@ -85,7 +86,7 @@ class StaffUser(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @require_role([Role.VIEW_USERS.value], skip_tenant_check_for_admin=True)
+    @require_role([Role.VIEW_USERS.value])
     def get(user_id):
         """Fetch a user by id."""
         args = request.args
@@ -128,7 +129,7 @@ class UserRoles(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @require_role([Role.CREATE_ADMIN_USER.value], skip_tenant_check_for_admin=True)
+    @require_role([Role.CREATE_ADMIN_USER.value])
     def post(user_id):
         """Add user to composite roles."""
         try:

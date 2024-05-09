@@ -185,10 +185,12 @@ class TestEngagementInfo(dict, Enum):
         'status': EngagementStatus.Published.value,
         'is_internal': False,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
+        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\
+        \"type\":\"unstyled\",\
         \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
+        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\
+        \"type\":\"unstyled\",\"depth\":0,\
         \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
     }
 
@@ -202,10 +204,12 @@ class TestEngagementInfo(dict, Enum):
         'status': EngagementStatus.Draft.value,
         'is_internal': False,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
+        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\
+            \"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
+        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\
+            \"type\":\"unstyled\",\"depth\":0,\
             \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
     }
 
@@ -219,14 +223,17 @@ class TestEngagementInfo(dict, Enum):
         'status': SubmissionStatus.Open.value,
         'is_internal': False,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
+        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\
+            \"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
+        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\
+            \"type\":\"unstyled\",\"depth\":0,\
             \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
         'status_block': [{
             'survey_status': 'Upcoming',
-            'block_text': '{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
+            'block_text': '{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\
+            \"type\":\"unstyled\",\"depth\":0,\
             \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
         }
         ]
@@ -243,7 +250,8 @@ class TestEngagementInfo(dict, Enum):
         'status': SubmissionStatus.Open.value,
         'is_internal': False,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
+        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\
+            \"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
     }
 
@@ -395,16 +403,7 @@ class TestJwtClaims(dict, Enum):
         'email': 'staff@gov.bc.ca',
         'identity_provider': LoginSource.IDIR.value,
         'client_roles': [
-            'staff',
-            'view_engagement',
-            'create_survey',
-            'view_users',
-            'create_admin_user',
-            'edit_members',
-            'toggle_user_status',
-            'export_to_csv',
-            'update_user_group',
-            'create_tenant'
+            'super_admin'
         ]
     }
 
@@ -418,33 +417,7 @@ class TestJwtClaims(dict, Enum):
         'tenant_id': 1,
         'email': 'staff@gov.bc.ca',
         'identity_provider': LoginSource.IDIR.value,
-        'client_roles': [
-            'staff',
-            'view_engagement',
-            'create_engagement',
-            'edit_engagement',
-            'create_survey',
-            'view_users',
-            'view_private_engagements',
-            'create_admin_user',
-            'view_all_surveys',
-            'view_surveys',
-            'edit_all_surveys',
-            'edit_survey',
-            'view_unapproved_comments',
-            'clone_survey',
-            'edit_members',
-            'review_comments',
-            'review_all_comments',
-            'view_all_engagements',
-            'toggle_user_status',
-            'export_all_to_csv',
-            'update_user_group',
-            'export_proponent_comment_sheet',
-            'export_internal_comment_sheet',
-            'export_cac_form_to_sheet',
-            'view_members'
-        ]
+        'client_roles': []
     }
     team_member_role = {
         'iss': CONFIG.JWT_OIDC_TEST_ISSUER,
@@ -456,13 +429,7 @@ class TestJwtClaims(dict, Enum):
         'email': 'staff@gov.bc.ca',
         'identity_provider': LoginSource.IDIR.value,
         'tenant_id': 1,
-        'client_roles': [
-            'staff',
-            'view_engagement',
-            'view_users',
-            'clone_survey',
-            'export_proponent_comment_sheet'
-        ]
+        'client_roles': []
     }
 
     reviewer_role = {
@@ -475,10 +442,7 @@ class TestJwtClaims(dict, Enum):
         'email': 'staff@gov.bc.ca',
         'identity_provider': LoginSource.IDIR.value,
         'tenant_id': 1,
-        'client_roles': [
-            'staff',
-            'view_users',
-        ]
+        'client_roles': []
     }
 
 
@@ -1006,9 +970,21 @@ class TestEngagementTranslationInfo(dict, Enum):
     engagementtranslation1 = {
         'name': fake.text(max_nb_chars=20),
         'description': fake.text(max_nb_chars=20),
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
+        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\
+            \"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
+        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\
+            \"type\":\"unstyled\",\"depth\":0,\
             \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
+    }
+
+
+class TestEngagementContentTranslationInfo(dict, Enum):
+    """Test scenarios of engagement content translation content."""
+
+    translation_info1 = {
+        'engagement_content_id': 1,
+        'language_id': 2,
+        'content_title': fake.text(max_nb_chars=20),
     }

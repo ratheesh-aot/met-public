@@ -1,3 +1,107 @@
+## May 7, 2024
+
+- **Feature** Ensure users can belong to more than one tenant [🎟️ DESENG-478](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-478)
+  - Tested users can belong to more than one tenant.
+  - Overide the default tenant filter for staff_user table to check with user_group_membership table.
+  
+## May 6, 2024
+
+- **Feature** Auto-populate question descriptions [🎟️ DESENG-596](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-596)
+  - Upgrading the version of met-formio to version 1.0.15-rc1. This version has the changes to have a default 
+  description for the form components. The changes were pushed to met-formio by the PR: https://github.com/bcgov/met-formio/pull/25.
+
+## May 2, 2024
+
+- **Feature** Added a new landing page for tenant management [🎟️ DESENG-591](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-591)
+  - The page will be updated to list and manage tenants in upcoming tickets.
+
+## April 30, 2024
+
+- **Task** Dagster ETL error [DESENG-599](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-599)
+  - Upgrading the version of python to 3.12 for dagster user code
+  - Upgrading the dependencies to support the version of python.
+  - Fixing a bug on survey etl service.
+- **Feature** Add Super Admin role [🎟️ DESENG-557](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-557)
+  - Added a new role, `SUPER_ADMIN`, to MET.
+  - The `SUPER_ADMIN` role has the highest level of access in the MET application.
+  - The `SUPER_ADMIN` role can perform all actions in MET, including actions in other tenants.
+  - The role can be only be assigned through the single sign-on (SSO) service.
+  - This overrides any other permissions set, e.g, a Viewer user who gets the super_admin role
+    will have all the permissions of a normal super admin.
+  - Change the React app's admin role to `SUPER_ADMIN` (previously `CREATE_TENANT`).
+  - Force all UI elements to be enabled for the `SUPER_ADMIN` role.
+  - Added unit tests for the new role, and updated an existing test related to cross-tenant access.
+
+## April 29, 2024
+
+- **Task** Upgrade python to 3.12 [DESENG-466](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-466)
+  - Upgrading the version of python to 3.12
+  - Upgrading the dependencies to support the version of python.
+  - Modify code as needed if the newer version does not support the former.
+
+## April 22, 2024
+
+- **Task** Openshift - Update the buildconfig for the MET-cron job runner [🎟️ DESENG-559](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-559)
+  - Versioning now uses the openshift.io namespace
+- **Task** In-app role management [DESENG-574](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-574)
+  - Introduced new database models to manage user roles and user-to-role mappings in the Met database.
+  - Revamped the authentication validation process to rely on roles retrieved directly from the database,
+    rather than relying solely on token-based roles.
+  - Eliminated redundant or unused roles from the system.
+  - Updated unit tests to to fetch roles directly from the database instead of relying on role generation from the factory and eliminated the Keycloak mock.
+  - Renamed admin and viewer role.
+  - Removed the usage of CSS API for role management.
+
+## April 11, 2024
+
+- **Task** Multi-language - Create engagement content translation tables & API routes [DESENG-544](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-544)
+  - Created a new table for engagement content translations
+  - Created API routes and services for engagement content translations
+  - Created Unit tests for engagement content translations
+
+## April 10, 2024
+
+- **Task** Remove default taxa from GDX tenant [DESENG-578](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-578)
+  - Removed the pre-populated taxon entries from the GDX tenant.
+  - With the power of the editor interface, tenants are now expected to create their own taxon entries.
+- **Task** Update contributing guide for developers [DESENG-475](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-475)
+
+## April 09, 2024
+
+- **Bugfix**: Stop Axios from trying to be a smarty pants and sending data in a format Flask doesn't understand [🎟️ DESENG-580](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-580)
+  - This was preventing the filtering feature from working
+  - Directly serialize any metadata filters before the request to avoid Axios's new nested object serialization
+  - Deserialize it again on the Flask side
+- **Task**: MET Web - Some URLs not taking users to correct locations/timing out [DESENG-542](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-542)
+  - Created authentication provider to know the logged-in state before the App component is rendered.
+  - Optimized tenant identification from the url.
+  - Optimized path segments identification.
+- **Task**: CSS Selector specificity [🎟️ DESENG-577](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-577)
+  - Replace the `!important` flag with more specific CSS selectors, specifically within dropdowns,
+    to ensure that the correct styles are applied, and that states we have not yet designed for
+    (e.g, complex focus states) are still styled appropriately and in an accessible manner.
+  - Soon, we will be doing a more in-depth revamp of dropdowns in the app to make them more
+    accessible and user-friendly. This helps work towards that goal.
+- **Bugfix**: MET Web - No save feedback unless main content tab is selected [🎟️ DESENG-541](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-541)
+  - Implemented notifications for successful saves across all engagement tabs.
+  - Resolved issue with saving engagement summary content during engagement creation.
+  - Updated tooltip on engagement content to use MetTooltip for consistency.
+
+## April 08, 2024
+
+- **Bugfix**: Submission of rejected comments [🎟️ DESENG-527](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-527)
+  - Fixed issue where resubmitted comments would not reappear in the queue for approval.
+  - Added unit tests to ensure the issue does not reoccur.
+- **Task**: MET - Clean up outstanding dependabot PRs [DESENG-535](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-535)
+  - Bump axios from 0.26.1 to 0.28.0 in met-web. Dependabot suggested this upgrade, but it required a few minor code changes.
+  - Updated the type definition of the 'error' parameter to include a generic type '{ message?: string }' to handle the AxiosError response properly.
+
+## April 05, 2024
+
+- **Task**: Allow for any gov.bc.ca email to receive emails in MET's dev & test environments [DESENG-533](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-533)
+  - Enabled dev open shift to use GC_NOTIFY api key of test which allows all email.
+  - Added new env var `SEND_EMAIL_INTERNAL_ONLY` to allow for internal emails such as govt emails only.
+
 ## April 04, 2024
 
 - **Feature** Engagement filtering - Add filtering by taxon [🎟️DESENG-445](https://apps.itsm.gov.bc.ca/jira/browse/DESENG-445)

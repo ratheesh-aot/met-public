@@ -9,7 +9,7 @@ interface Route {
 }
 
 export const Routes: Route[] = [
-    { name: 'Home', path: '/', base: '/', authenticated: false, allowedRoles: [] },
+    { name: 'Home', path: '/home', base: '/', authenticated: false, allowedRoles: [] },
     {
         name: 'Engagements',
         path: '/engagements',
@@ -44,5 +44,12 @@ export const Routes: Route[] = [
         base: 'feedback',
         authenticated: true,
         allowedRoles: [USER_ROLES.VIEW_FEEDBACKS],
+    },
+    {
+        name: 'Tenant Admin',
+        path: '/tenantadmin',
+        base: 'tenantadmin',
+        authenticated: true,
+        allowedRoles: [USER_ROLES.SUPER_ADMIN],
     },
 ];

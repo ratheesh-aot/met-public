@@ -169,6 +169,10 @@ class Config:  # pylint: disable=too-few-public-methods
     # Adjust this value based on security considerations.
     CORS_MAX_AGE = os.getenv('CORS_MAX_AGE', None)  # Default: 0 seconds
 
+    # If enabled, Emails will be send onlt to the internal email address set in constant INTERNAL_EMAIL_DOMAIN
+    # such as `@gov.bc.ca` . Mainly used for dev and test environments.
+    SEND_EMAIL_INTERNAL_ONLY = env_truthy('SEND_EMAIL_INTERNAL_ONLY', default=False)
+
     EPIC_CONFIG = {
         'ENABLED': env_truthy('EPIC_INTEGRATION_ENABLED'),
         'JWT_OIDC_ISSUER': os.getenv('EPIC_JWT_OIDC_ISSUER'),
@@ -185,12 +189,8 @@ class Config:  # pylint: disable=too-few-public-methods
         'REALMNAME': os.getenv('KEYCLOAK_REALMNAME', 'standard'),
         'SERVICE_ACCOUNT_ID': os.getenv('MET_ADMIN_CLIENT_ID'),
         'SERVICE_ACCOUNT_SECRET': os.getenv('MET_ADMIN_CLIENT_SECRET'),
-        'ADMIN_BASE_URL': os.getenv('KEYCLOAK_ADMIN_TOKEN_URL', ''),
-        'ADMIN_USERNAME': os.getenv('KEYCLOAK_ADMIN_CLIENT_ID'),
-        'ADMIN_SECRET': os.getenv('KEYCLOAK_ADMIN_CLIENT_SECRET'),
-        'CSS_API_URL': os.getenv('CSS_API_URL', ''),
-        'CSS_API_ENVIRONMENT': os.getenv('CSS_API_ENVIRONMENT', ''),
-        'CSS_API_INTEGRATION_ID': os.getenv('CSS_API_INTEGRATION_ID'),
+        'ADMIN_USERNAME': os.getenv('MET_ADMIN_CLIENT_ID'),
+        'ADMIN_SECRET': os.getenv('MET_ADMIN_CLIENT_SECRET'),
         'CONNECT_TIMEOUT': int(os.getenv('KEYCLOAK_CONNECT_TIMEOUT', '60')),
     }
 
